@@ -8,6 +8,7 @@ use Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Pipeline\Pipeline as BasePipeline;
+use Illuminate\Routing\Exceptions\SkipRouteException;
 use Symfony\Component\Debug\Exception\FatalThrowableError;
 
 /**
@@ -73,6 +74,10 @@ class Pipeline extends BasePipeline
     {
         if (! $this->container->bound(ExceptionHandler::class) ||
             ! $passable instanceof Request) {
+            throw $e;
+        }
+
+        if ($e instanceof SkipRouteException) {
             throw $e;
         }
 

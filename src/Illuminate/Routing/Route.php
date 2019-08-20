@@ -50,6 +50,13 @@ class Route
     public $isFallback = false;
 
     /**
+     * Indicates whether the route should skip to next if not found.
+     *
+     * @var bool
+     */
+    public $shouldSkipOnNotFound = false;
+
+    /**
      * The controller instance.
      *
      * @var mixed
@@ -536,6 +543,18 @@ class Route
     public function fallback()
     {
         $this->isFallback = true;
+
+        return $this;
+    }
+
+    /**
+     * Mark this route as a fallback route.
+     *
+     * @return $this
+     */
+    public function skipIfNotFound()
+    {
+        $this->shouldSkipOnNotFound = true;
 
         return $this;
     }
