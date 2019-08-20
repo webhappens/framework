@@ -18,10 +18,13 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Contracts\Routing\BindingRegistrar;
+use Illuminate\Routing\Exceptions\SkipRouteException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 use Illuminate\Contracts\Routing\Registrar as RegistrarContract;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @mixin \Illuminate\Routing\RouteRegistrar
@@ -620,7 +623,27 @@ class Router implements RegistrarContract, BindingRegistrar
      */
     public function dispatchToRoute(Request $request)
     {
-        return $this->runRoute($request, $this->findRoute($request));
+        $routes = $this->routes->matchAll($request);
+
+        foreach($routes as $route) {
+            $this->current = $route;
+
+            $this->container->instance(Route::class, $route);
+
+            try {
+                $response = $this->runRoute($request, $route);
+            } catch (SkipRouteException $e) {
+                continue;
+            }
+
+            if ($response->getStatusCode() == 404 && $route->shouldSkipOnNotFound) {
+                continue;
+            }
+
+            return $response;
+        }
+
+        // return $this->runRoute($request, $this->findRoute($request));
     }
 
     /**
